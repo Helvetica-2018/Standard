@@ -90,6 +90,12 @@ Visit http://localhost:8080/hello/world to say: "hello world"
 
 ## Using filter
 ```php
+use Helvetica\Standard\App;
+use Helvetica\Standard\Router;
+use Helvetica\Standard\Library\Request;
+use Helvetica\Standard\Library\Response;
+use Helvetica\Standard\Abstracts\ActionFilter;
+
 class SayHelloFilter extends ActionFilter
 {
     public function hook(Closure $next, $request)
