@@ -6,7 +6,9 @@
 #### Simple is Power
 
 ## Installation
->composer require helvetica/standard 1.0.1
+```
+composer require helvetica/standard 1.0.1
+```
 
 ## Get Start
 ```php
@@ -24,7 +26,40 @@ $router->set('/hello/<name>', function(Response $response, $name) {
 
 (new App)->start();
 ```
+Test with built-in server
+```
+php -S localhost:8080
+```
+Visit http://localhost:8080/hello/world to say: "hello world" 
 
->php -S localhost:8080
+## Using template
+>hello.html
+```html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Document</title>
+    </head>
+    <body>
+        hello <?= $name ?>
+    </body>
+</html>
+```
 
-http://localhost:8080/hello/world
+>index.php
+```php
+use Helvetica\Standard\App;
+use Helvetica\Standard\Router;
+use Helvetica\Standard\Library\Template;
+use Helvetica\Standard\Library\Response;
+
+$router = new Router();
+
+$router->set('/hello/<name>', function(Response $response, Template $temp, $name) {
+    $output = $temp->render(__DIR__ . '/hello.php', ['name' => $name]);
+    return $response->withContent($output);
+});
+
+(new App)->start();
+```
