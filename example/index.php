@@ -7,71 +7,27 @@ spl_autoload_register(function($class) {
 });
 
 use Helvetica\Standard\App;
-use Helvetica\Standard\Container;
 use Helvetica\Standard\Router;
-use Helvetica\Standard\Abstracts\ActionFilter;
 use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
-use Helvetica\Standard\Library\Environment;
-use GuzzleHttp\Psr7\Stream;
-use Helvetica\Standard\Library\Template;
-use Helvetica\Standard\Exception\NotFoundException;
+use Helvetica\Standard\Abstracts\ActionFilter;
 
-class Test
-{
-    public function index()
-    {
-        return 333;
-    }
-}
-
-class Contr
-{
-    public function index(Test $test, $id, $cc)
-    {
-        return $test->index();
-    }
-}
-
-class Mid1 extends ActionFilter
+class SayHelloFilter extends ActionFilter
 {
     public function hook(Closure $next, $request)
     {
-        $request = $request->withAttributes(['userName' => $this->getParams()]);
-        // print_r($request->getAttributes());
+        $params = $this->getParams();
+        $name = $params['name'];
+        $request->withAttributes(['text' => 'hello ' . $name]);
         return $next($request);
-    }
-}
-
-class Mid2 extends ActionFilter
-{
-    public function hook(Closure $next, $request)
-    {
-        $response = $next($request);
-        return $response;
     }
 }
 
 $router = new Router();
 
-$router->set('/hello/<name>', function(Response $response, Template $tmp, $name) {
-    $tmp->setBasePath(__DIR__);
-    $output = $tmp->render('/hello.php');
-    return $response->withContent($output);
-});
-
-$router->set('/not-found', function(Response $response) {
-    throw new NotFoundException();
-});
-
-$router->group('/test', function() {
-
-    $this->set('/test1/<id>/aaa/<cc>', function(Request $r, Response $res, $id, $cc) {
-        $data = $r->getAttributes();
-        $res = $res->withJson($data);
-        return $res;
-    })->setFilters([Mid1::class, Mid2::class]);
-
-});
+$router->set('/hello/<name>', function(Request $request, Response $response, $name) {
+    $text = $request->getAttribute('text');
+    return $response->withContent($text);
+})->setFilters([SayHelloFilter::class]);
 
 (new App)->start();

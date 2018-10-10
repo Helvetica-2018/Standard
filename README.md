@@ -10,10 +10,13 @@
 composer require helvetica/standard 1.0.1
 ```
 
-## Get Start
+### Import the composer autoload
 ```php
 require('vendor/autoload.php');
+```
 
+## Get Start
+```php
 use Helvetica\Standard\App;
 use Helvetica\Standard\Router;
 use Helvetica\Standard\Library\Response;
