@@ -68,6 +68,10 @@ Visit http://localhost:8080/hello/world to say: "hello world"
 ## Controller classes
 > index.php
 ```php
+use Helvetica\Standard\App;
+use Helvetica\Standard\Router;
+use Helvetica\Standard\Library\Response;
+
 class PrintController
 {
     public function hello(Response $response, $name)
