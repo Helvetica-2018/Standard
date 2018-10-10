@@ -232,4 +232,16 @@ class Router
     {
         return $this->filters;
     }
+
+    /**
+     * Get url params
+     * 
+     * @return array
+     *
+     * @return void
+     */
+    public function getParams()
+    {
+        return $this->params;
+    }
 }

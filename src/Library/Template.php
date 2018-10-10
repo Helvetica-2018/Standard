@@ -23,7 +23,6 @@ class Template
     {
         ob_start();
         $this->assign($values);
-        extract($this->getValues());
         $this->load($fileName);
 
         $output = ob_get_contents();
@@ -39,6 +38,7 @@ class Template
     public function load($fileName)
     {
         $path = $this->basePath . $fileName;
+        extract($this->getValues());
         require($path);
     }
 

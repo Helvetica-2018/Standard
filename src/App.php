@@ -75,13 +75,14 @@ class App
     /**
      * Start request action.
      * Send response.
+     * 
+     * @return void
      */
     public function start()
     {
         try {
             $route = Router::match();
-            $this->route = $route;
-            $response = $this->startAction();
+            $response = $this->startAction($route);
         } catch (\Throwable $e) {
             $response = $this->handleException($e);
         } catch (\Exception $e) {
@@ -99,11 +100,18 @@ class App
      * @param Router $route
      * @return Response
      */
-    private function startAction()
+    private function startAction($route)
     {
-        $classes = $this->route->getFilters();
-        $filters = $this->prepareFilters($classes);
-        $stack = \array_reduce($filters, $this->carry(), $this->controllerWrapper());
+        $classes = $route->getFilters();
+        $params = $route->getParams();
+
+        $filters = $this->prepareFilters($classes, $params);
+        $stack = \array_reduce(
+            $filters,
+            $this->carry(),
+            $this->controllerWrapper($route)
+        );
+
         $request = $this->di->newClass(Request::class);
         return \call_user_func($stack, $request);
     }
@@ -112,13 +120,14 @@ class App
      * Build filter closures.
      * 
      * @param array $filterClasses
+     * @param array $params
      * @return Closure[]
      */
-    private function prepareFilters($filterClasses)
+    private function prepareFilters($filterClasses, $params)
     {
-        $filters = \array_map(function($class) {
+        $filters = \array_map(function($class) use ($params) {
             $filter = $this->di->newClass($class);
-            $filter->params = $this->route->params;
+            $filter->params = $params;
             return $this->di->getClosure($filter, 'hook');
         }, $filterClasses);
         return \array_reverse($filters);
@@ -127,23 +136,28 @@ class App
     /**
      * Build a filter for controller.
      * 
-     * @return Closure
+     * @param Router $route
      * 
+     * @return Closure
      * @throws \RuntimeException
      */
-    private function controllerWrapper()
+    private function controllerWrapper($route)
     {
-        $route = $this->route;
         return function (Request $request) use ($route) {
             if (\method_exists($route->callback, '__invoke')) {
                 return $this->di->call($route->callback, $route->params);
             } elseif (\is_array($route->callback)) {
                 $class = $route->callback[0];
-                $method = $route->callback[1];
+                $method = 'index';
+                if (count($route->callback) > 1) {
+                    $method = $route->callback[1];
+                }
+
                 $controller = $this->di->newClass($class);
-                return $this->di->injection($controller, $method, $route->params);
+                return $this->di->injectionByObject($controller, $method, $route->params);
             }
-            throw new \RuntimeException('The controller option must be array or instanceof \Closure.');
+
+            throw new \RuntimeException('The param 2 must be array or callable object.');
         };
     }
 
