@@ -42,7 +42,7 @@ Visit http://localhost:8080/hello/world to say: "hello world"
         <title>Document</title>
     </head>
     <body>
-        hello <?= $name ?>
+        <h1>hello <?= $name ?></h1>
     </body>
 </html>
 ```
@@ -60,6 +60,25 @@ $router->set('/hello/<name>', function(Response $response, Template $temp, $name
     $output = $temp->render(__DIR__ . '/hello.php', ['name' => $name]);
     return $response->withContent($output);
 });
+
+(new App)->start();
+```
+Visit http://localhost:8080/hello/world to say: "hello world"
+
+## Controller classes
+> index.php
+```php
+class PrintController
+{
+    public function hello(Response $response, $name)
+    {
+        return $response->withContent('hello ' . $name);
+    }
+}
+
+$router = new Router();
+
+$router->set('/hello/<name>', [PrintController::class, 'hello']);
 
 (new App)->start();
 ```
