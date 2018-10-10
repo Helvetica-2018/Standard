@@ -63,3 +63,4 @@ $router->set('/hello/<name>', function(Response $response, Template $temp, $name
 
 (new App)->start();
 ```
+Visit http://localhost:8080/hello/world to say: "hello world"
