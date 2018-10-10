@@ -10,7 +10,7 @@ abstract class ActionFilter
      * 
      * @var array $params
      */
-    public static $params = [];
+    public $params = [];
 
     /**
      * The hook return a response or call next hook.
@@ -27,6 +27,6 @@ abstract class ActionFilter
      */
     protected function getParams()
     {
-        return static::$params;
+        return $this->params;
     }
 }

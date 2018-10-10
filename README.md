@@ -86,3 +86,28 @@ $router->set('/hello/<name>', [PrintController::class, 'hello']);
 
 (new App)->start();
 ```
+Visit http://localhost:8080/hello/world to say: "hello world"
+
+## Using filter
+```php
+class SayHelloFilter extends ActionFilter
+{
+    public function hook(Closure $next, $request)
+    {
+        $params = $this->getParams();
+        $name = $params['name'];
+        $request->withAttributes(['text' => 'hello ' . $name]);
+        return $next($request);
+    }
+}
+
+$router = new Router();
+
+$router->set('/hello/<name>', function(Request $request, Response $response, $name) {
+    $text = $request->getAttribute('text');
+    return $response->withContent($text);
+})->setFilters([SayHelloFilter::class]);
+
+(new App)->start();
+```
+Visit http://localhost:8080/hello/world to say: "hello world"

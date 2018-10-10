@@ -43,6 +43,13 @@ class Router
     public $filters = [];
 
     /**
+     * Router callback.
+     *
+     * @var \Closure|array
+     */
+    protected $controller;
+
+    /**
      * Match route fields with request.
      * 
      * @return static|false
@@ -129,11 +136,11 @@ class Router
      * @param Closure|array $closure
      * @return void
      */
-    public function set($path, $closure)
+    public function set($path, $controller)
     {
         $key = $this->pathPrefix . $path;
         $router = clone $this;
-        $router->callback = $closure;
+        $router->controller = $controller;
         static::$routes[$key] = $router;
         return $router;
     }
@@ -243,5 +250,15 @@ class Router
     public function getParams()
     {
         return $this->params;
+    }
+
+    /**
+     * Get controller.
+     *
+     * @return \Closure|array
+     */
+    public function getController()
+    {
+        return $this->controller;
     }
 }

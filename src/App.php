@@ -88,6 +88,7 @@ class App
         } catch (\Exception $e) {
             $response = $this->handleException($e);
         }
+
         if ($response instanceof Response) {
             $this->accept($response);
         }
@@ -104,14 +105,15 @@ class App
     {
         $classes = $route->getFilters();
         $params = $route->getParams();
+        $controller = $route->getController();
 
         $filters = $this->prepareFilters($classes, $params);
         $stack = \array_reduce(
             $filters,
             $this->carry(),
-            $this->controllerWrapper($route)
+            $this->controllerWrapper($controller, $params)
         );
-
+        
         $request = $this->di->newClass(Request::class);
         return \call_user_func($stack, $request);
     }
@@ -141,22 +143,21 @@ class App
      * @return Closure
      * @throws \RuntimeException
      */
-    private function controllerWrapper($route)
+    private function controllerWrapper($controller, $params)
     {
-        return function (Request $request) use ($route) {
-            if (\method_exists($route->callback, '__invoke')) {
-                return $this->di->call($route->callback, $route->params);
-            } elseif (\is_array($route->callback)) {
-                $class = $route->callback[0];
+        return function (Request $request) use ($controller, $params) {
+            if (\method_exists($controller, '__invoke')) {
+                return $this->di->call($controller, $params);
+            } elseif (\is_array($controller)) {
+                $class = $controller[0];
                 $method = 'index';
-                if (count($route->callback) > 1) {
-                    $method = $route->callback[1];
+                if (count($controller) > 1) {
+                    $method = $controller[1];
                 }
 
                 $controller = $this->di->newClass($class);
-                return $this->di->injectionByObject($controller, $method, $route->params);
+                return $this->di->injectionByObject($controller, $method, $params);
             }
-
             throw new \RuntimeException('The param 2 must be array or callable object.');
         };
     }
@@ -194,13 +195,13 @@ class App
     /**
      * Global exception handler.
      * 
-     * @param \Exception $e
+     * @param \Exception|\Error $e
      * 
      * @return Response
      * 
      * @throws Exception
      */
-    private function handleException(\Exception $e)
+    private function handleException($e)
     {
         if ($e instanceof HttpException) {
             return $this->di->injectionByObject($e, 'getResponse');

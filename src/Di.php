@@ -143,7 +143,7 @@ class Di extends Container
      */
     public function getClosure($instance, $method)
     {
-        $reflectionMethod = ReflectionMethod($instance, $method);
+        $reflectionMethod = new ReflectionMethod($instance, $method);
         return $reflectionMethod->getClosure($instance);
     }
 
