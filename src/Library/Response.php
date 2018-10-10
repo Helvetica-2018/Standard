@@ -1,5 +1,5 @@
 <?php
-namespace Helvetica\Standard\Net;
+namespace Helvetica\Standard\Library;
 
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 

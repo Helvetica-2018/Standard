@@ -1,19 +1,20 @@
 <?php
 namespace Helvetica\Standard\Exception;
 
+use Helvetica\Standard\Library\Request;
+use Helvetica\Standard\Library\Response;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 /**
- * Abort 404 http code by default.
+ * Abort 404 http error.
  */
-class NotFoundException extends \Exception implements NotFoundExceptionInterface
+class NotFoundException extends HttpException
 {
-    /**
-     * @param string Exception message.
-     */
-    public function __construct($message = '404 not found.')
-    {
-        parent::__construct($message, 404);
-        http_response_code(404);
-    }
+    /** @var int */
+    protected $code = 404;
+
+    /** @var string */
+    protected $message = '404 Not Found';
+
 }

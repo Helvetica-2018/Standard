@@ -1,22 +1,21 @@
 <?php
-require('vendor/autoload.php');
+require('../vendor/autoload.php');
 spl_autoload_register(function($class) {
     $class = strtr($class, '\\', '/');
-    $class = str_replace('Helvetica/Standard', 'src', $class);
+    $class = str_replace('Helvetica/Standard', '../src', $class);
     require_once($class . '.php');
 });
 
 use Helvetica\Standard\App;
 use Helvetica\Standard\Container;
 use Helvetica\Standard\Router;
-use Helvetica\Standard\Ioc;
 use Helvetica\Standard\Abstracts\ActionFilter;
-use Helvetica\Standard\Net\Request;
-use Helvetica\Standard\Net\Response;
-use Helvetica\Standard\Abstracts\Config;
+use Helvetica\Standard\Library\Request;
+use Helvetica\Standard\Library\Response;
+use Helvetica\Standard\Library\Environment;
 use GuzzleHttp\Psr7\Stream;
-
-$router = new Router();
+use Helvetica\Standard\Library\Template;
+use Helvetica\Standard\Exception\NotFoundException;
 
 class Test
 {
@@ -53,10 +52,19 @@ class Mid2 extends ActionFilter
     }
 }
 
+$router = new Router();
 
-$app = new App();
+$router->set('/hello/<name>', function(Response $response, Template $tmp, $name) {
+    $tmp->setBasePath(__DIR__);
+    $output = $tmp->render('/hello.php');
+    return $response->withContent($output);
+});
 
-$app->router->group('/test', function() {
+$router->set('/not-found', function(Response $response) {
+    throw new NotFoundException();
+});
+
+$router->group('/test', function() {
 
     $this->set('/test1/<id>/aaa/<cc>', function(Request $r, Response $res, $id, $cc) {
         $data = $r->getAttributes();
@@ -66,4 +74,4 @@ $app->router->group('/test', function() {
 
 });
 
-$app->start();
+(new App)->start();

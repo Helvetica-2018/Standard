@@ -4,26 +4,24 @@ namespace Helvetica\Standard;
 use Closure;
 use GuzzleHttp\Psr7\Stream;
 use Helvetica\Standard\Dependent;
-use Helvetica\Standard\Net\Request;
-use Helvetica\Standard\Net\Response;
-use Psr\Http\Message\ResponseInterface;
+use Helvetica\Standard\Library\Request;
+use Helvetica\Standard\Library\Response;
+use Helvetica\Standard\Abstracts\Provider;
+use Helvetica\Standard\Exception\HttpException;
 
 /**
  * @property Router $router
  * @property Container $container
- * @property Ioc $ioc
+ * @property Di $di
  * @property Config $config
  */
 class App
 {
     /** @var Container */
-    public $container;
+    private $container;
 
-    /** @var Router $router */
-    public $router;
-
-    /** @var Ioc $ioc */
-    public $ioc;
+    /** @var Di $di */
+    public $di;
 
     /** @var Config */
     public $config;
@@ -58,16 +56,20 @@ class App
      */
     public function __construct($config = [])
     {
-        $this->router = new Router();
-        $this->container = new Container();
-        $this->ioc = new Ioc($this->container);
-        $this->config = new Config($config);
-        $this->setProviders($this->config->providers());
+        $container = new Container();
+        $container->set(Config::class, new Config($config));
+        $this->di = new Di($container);
+        $this->registerProvider(Dependents::class);
     }
 
-    public function setProviders($providers)
+    /**
+     * Register a provider.
+     * 
+     * @param string $provider
+     */
+    public function registerProvider($provider)
     {
-        Dependent::setProviders($providers);
+        (new $provider($this->di))->register();
     }
 
     /**
@@ -76,10 +78,16 @@ class App
      */
     public function start()
     {
-        $route = Router::match();
-        $this->route = $route;
-        $response = $this->startAction();
-        if ($response instanceof ResponseInterface) {
+        try {
+            $route = Router::match();
+            $this->route = $route;
+            $response = $this->startAction();
+        } catch (\Throwable $e) {
+            $response = $this->handleException($e);
+        } catch (\Exception $e) {
+            $response = $this->handleException($e);
+        }
+        if ($response instanceof Response) {
             $this->accept($response);
         }
     }
@@ -96,30 +104,22 @@ class App
         $classes = $this->route->getFilters();
         $filters = $this->prepareFilters($classes);
         $stack = \array_reduce($filters, $this->carry(), $this->controllerWrapper());
-        return $stack($this->prepareRequest());
-    }
-
-    /**
-     * Prepare http request from env.
-     * 
-     * @return \Helvetica\Standard\Net\Request
-     */
-    private function prepareRequest()
-    {
-        return $this->ioc->newClass(Request::class)->getInstance();
+        $request = $this->di->newClass(Request::class);
+        return \call_user_func($stack, $request);
     }
 
     /**
      * Build filter closures.
+     * 
      * @param array $filterClasses
      * @return Closure[]
      */
     private function prepareFilters($filterClasses)
     {
         $filters = \array_map(function($class) {
-            $mock = $this->ioc->newClass($class);
-            $mock->setStaticProperty('params', $this->route->params);
-            return $mock->getClosure('hook');
+            $filter = $this->di->newClass($class);
+            $filter->params = $this->route->params;
+            return $this->di->getClosure($filter, 'hook');
         }, $filterClasses);
         return \array_reverse($filters);
     }
@@ -136,12 +136,12 @@ class App
         $route = $this->route;
         return function (Request $request) use ($route) {
             if (\method_exists($route->callback, '__invoke')) {
-                return $this->ioc->call($route->callback, $route->params);
+                return $this->di->call($route->callback, $route->params);
             } elseif (\is_array($route->callback)) {
                 $class = $route->callback[0];
                 $method = $route->callback[1];
-                $controller = $this->ioc->newClass($class);
-                return $controller->injection($method, $route->params);
+                $controller = $this->di->newClass($class);
+                return $this->di->injection($controller, $method, $route->params);
             }
             throw new \RuntimeException('The controller option must be array or instanceof \Closure.');
         };
@@ -175,5 +175,23 @@ class App
         } else {
             static::closeOutputBuffers(0, true);
         }
+    }
+
+    /**
+     * Global exception handler.
+     * 
+     * @param \Exception $e
+     * 
+     * @return Response
+     * 
+     * @throws Exception
+     */
+    private function handleException(\Exception $e)
+    {
+        if ($e instanceof HttpException) {
+            return $this->di->injectionByObject($e, 'getResponse');
+        }
+
+        throw $e;
     }
 }

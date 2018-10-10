@@ -3,29 +3,22 @@ namespace Helvetica\Standard;
 
 use Psr\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
-use Helvetica\Standard\Exception\NotFoundException;
 use Helvetica\Standard\Exception\ContainerOverrideException;
 use Helvetica\Standard\Exception\UnknownIdentifierException;
 
 class Container implements ContainerInterface, \ArrayAccess
 {
-    public $_store;
-    public $_frozen;
-    public function __construct()
-    {
-        $this->_store = [];
-        $this->_frozen = [];
-    }
+    public $_store = [];
+    public $_frozenn = [];
 
     /**
-     * Finds an entry of the container by its identifier and returns it.
+     * Get an entry of the container.
      *
-     * @param string $id Identifier of the entry to look for.
+     * @param string $id
      *
-     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-     * @throws ContainerExceptionInterface Error while retrieving the entry.
+     * @throws ContainerExceptionInterface
      *
-     * @return mixed Entry.
+     * @return mixed
      */
     public function get($id)
     {
@@ -36,13 +29,36 @@ class Container implements ContainerInterface, \ArrayAccess
      * Returns true if the container can return an entry for the given identifier.
      * Returns false otherwise.
      * 
-     * @param string $id Identifier of the entry to look for.
+     * @param string $id
      *
      * @return bool
      */
     public function has($id)
     {
         return $this->offsetExists($id);
+    }
+
+    /**
+     * Assign a value.
+     * 
+     * @param string|integer $offset
+     * @param mixed $value
+     * 
+     * @throws ContainerOverrideException When entry is exists.
+     */
+    public function set($offset, $value)
+    {
+        $this->offsetSet($offset, $value);
+    }
+
+    /**
+     * Merge values to store.
+     * 
+     * @param array $array
+     */
+    public function merge($array)
+    {
+        $this->_store = \array_merge($this->_store, $array);
     }
 
     /**
@@ -63,9 +79,9 @@ class Container implements ContainerInterface, \ArrayAccess
      * 
      * @param string|integer $offset
      * 
-     * @throws UnknownIdentifierException  No entry was found for **this** identifier.
+     * @throws UnknownIdentifierException
      * 
-     * @return mixed Entry
+     * @return mixed
      */
 
     public function offsetGet($offset)
@@ -86,8 +102,8 @@ class Container implements ContainerInterface, \ArrayAccess
     /**
      * Assign a value to the specified entry id.
      * 
-     * @param string|integer $offset Entry id
-     * @param mixed $value Entry
+     * @param string|integer $offset
+     * @param mixed $value
      * 
      * @throws ContainerOverrideException When entry is exists.
      */
@@ -102,7 +118,7 @@ class Container implements ContainerInterface, \ArrayAccess
     /**
      * Unset an Entry
      * 
-     * @param string|integer $offset Entry id
+     * @param string|integer $offset
      */
     public function offsetUnset($offset)
     {
@@ -131,7 +147,7 @@ class Container implements ContainerInterface, \ArrayAccess
     /**
      * Returns all defined value names.
      *
-     * @return array An array of value names
+     * @return array
      */
     public function keys()
     {
@@ -144,30 +160,5 @@ class Container implements ContainerInterface, \ArrayAccess
     public function count()
     {
         return count($this->_store);
-    }
-
-    /**
-     * @param string|integer $id
-     * 
-     * @throws UnknownIdentifierException  No entry was found for **this** identifier.
-     * 
-     * @return mixed Entry
-     */
-    public function __get($id)
-    {
-        return $this->get($id);
-    }
-
-    /**
-     * Assign a value to the specified entry id.
-     * 
-     * @param string|integer $offset Entry id
-     * @param mixed $value Entry
-     * 
-     * @throws ContainerExceptionInterface When entry is exists.
-     */
-    public function __set($id, $callable)
-    {
-        $this->offsetSet($id, $callable);
     }
 }

@@ -45,8 +45,7 @@ class Router
     /**
      * Match route fields with request.
      * 
-     * @return static
-     * @throws NotFoundException
+     * @return static|false
      */
     public static function match()
     {
