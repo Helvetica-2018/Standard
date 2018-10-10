@@ -6,7 +6,7 @@
 #### Simple is Power
 
 ## Installation
->composer require helvetica/standard v1.0.0
+>composer require helvetica/standard 1.0.1
 
 ## Get Start
 ```php
