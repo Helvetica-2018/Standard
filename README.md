@@ -1,5 +1,5 @@
-# Helvetica/Standard
-[![star](https://gitee.com/helvetica/standard/badge/star.svg?theme=white)](https://gitee.com/helvetica/standard/stargazers)
+# Helvetica/Standard 
+![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
 
 #### Simple is Power
 
