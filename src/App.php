@@ -7,7 +7,10 @@ use Helvetica\Standard\Dependent;
 use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
 use Helvetica\Standard\Abstracts\Provider;
+use Helvetica\Standard\Handlers\NotFoundHandler;
+use Helvetica\Standard\Abstracts\HttpExceptionHandler;
 use Helvetica\Standard\Exception\HttpException;
+use Helvetica\Standard\Exception\NotFoundException;
 
 /**
  * @property Router $router
@@ -17,6 +20,10 @@ use Helvetica\Standard\Exception\HttpException;
  */
 class App
 {
+    const HANDLE_NOT_FOUND = 'HANDLE_NOT_FOUND';
+
+    const HANDLE_METHOD_NOT_ALLOW = 'HANDLE_METHOD_NOT_ALLOW';
+
     /** @var Container */
     private $container;
 
@@ -59,7 +66,6 @@ class App
         $container = new Container();
         $container->set(Config::class, new Config($config));
         $this->di = new Di($container);
-        $this->registerProvider(Dependents::class);
     }
 
     /**
@@ -81,11 +87,14 @@ class App
     public function start()
     {
         try {
+            $this->registerProvider(Dependents::class);
             $route = Router::match();
             $response = $this->startAction($route);
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             $response = $this->handleException($e);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             $response = $this->handleException($e);
         }
 
@@ -193,6 +202,20 @@ class App
     }
 
     /**
+     * Set handler.
+     *
+     * @param string $handleName
+     * @param string $handler
+     * @return void
+     */
+    public function setHandler($handleName, $handler)
+    {
+        $this->di->setProvider($handleName, function() use ($handler) {
+            return new $handler();
+        });
+    }
+
+    /**
      * Global exception handler.
      * 
      * @param \Exception|\Error $e
@@ -204,6 +227,13 @@ class App
     private function handleException($e)
     {
         if ($e instanceof HttpException) {
+
+            if ($e instanceof NotFoundException) {
+                $handler = $this->di->getProvider(static::HANDLE_NOT_FOUND);
+                $handler->exception = $e;
+                return $this->di->injectionByObject($handler, 'getResponse');
+            }
+
             return $this->di->injectionByObject($e, 'getResponse');
         }
 

@@ -210,4 +210,26 @@ class Di extends Container
     {
         $this->dependent->set($className, $provider);
     }
+
+    /**
+     * Has dependent provider?
+     *
+     * @param string $className
+     * @return bool
+     */
+    public function hasProvider($className)
+    {
+        return $this->dependent->has($className);
+    }
+
+    /**
+     * Get dependent provider by name.
+     *
+     * @param string $className
+     * @return mixed
+     */
+    public function getProvider($className)
+    {
+        return $this->dependent->get($className);
+    }
 }
