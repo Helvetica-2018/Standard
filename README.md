@@ -36,7 +36,7 @@ php -S localhost:8080
 Visit http://localhost:8080/hello/world to say: "hello world" 
 
 ## Using template
->hello.html
+>hello.php
 ```html
 <!DOCTYPE html>
 <html lang="en">
