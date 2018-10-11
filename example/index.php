@@ -11,6 +11,7 @@ use Helvetica\Standard\Router;
 use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
 use Helvetica\Standard\Abstracts\ActionFilter;
+use Helvetica\Standard\Exception\NotFoundException;
 use Helvetica\Standard\Abstracts\HttpExceptionHandler;
 
 class SayHelloFilter extends ActionFilter
@@ -27,9 +28,8 @@ class SayHelloFilter extends ActionFilter
 $router = new Router();
 
 $router->set('/hello/<name>', function(Request $request, Response $response, $name) {
-    $text = $request->getAttribute('text');
-    return $response->withContent($text);
-})->setFilters([SayHelloFilter::class]);
+    throw new NotFoundException();
+});
 
 class TestHandler extends HttpExceptionHandler
 {

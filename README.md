@@ -120,3 +120,34 @@ $router->set('/hello/<name>', function(Request $request, Response $response, $na
 (new App)->start();
 ```
 Visit http://localhost:8080/hello/world to say: "hello world"
+
+## Using handler
+Let's raise a 404 not found exception, and register a not found handler.
+```php
+use Helvetica\Standard\App;
+use Helvetica\Standard\Router;
+use Helvetica\Standard\Exception\NotFoundException;
+use Helvetica\Standard\Abstracts\HttpExceptionHandler;
+
+$router = new Router();
+
+$router->set('/not-found', function() {
+    throw new NotFoundException();
+});
+
+// create a not found handler
+class MyNotFoundHandler extends HttpExceptionHandler
+{
+    public function getResponse(Response $response)
+    {
+        return $response->withContent('This is my not found exception message.');
+    }
+}
+
+$app = new App();
+
+$app->setHandler(App::HANDLE_NOT_FOUND, MyNotFoundHandler::class);
+
+$app->start();
+```
+Visit http://localhost:8080/not-found to say: "This is my not found exception message."
