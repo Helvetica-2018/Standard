@@ -1,12 +1,15 @@
 <?php
 namespace Helvetica\Standard\Handlers;
 
-use Helvetica\Standard\Abstracts\HttpExceptionHandler;
+use Helvetica\Standard\Abstracts\StandardExceptionHandler;
 use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
 
-class NotFoundHandler extends HttpExceptionHandler
+class HttpExceptionHandler extends StandardExceptionHandler
 {
+    /** @var \Exception */
+    public $exception;
+
     /**
      * Get response
      * This method is injectable
@@ -16,7 +19,7 @@ class NotFoundHandler extends HttpExceptionHandler
      * 
      * @return Response
      */
-    public function getResponse(Request $request, Response $response)
+    public function hook(Request $request, Response $response)
     {
         return $this->exception->getResponse($request, $response);
     }

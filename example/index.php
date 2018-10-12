@@ -12,7 +12,7 @@ use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
 use Helvetica\Standard\Abstracts\ActionFilter;
 use Helvetica\Standard\Exception\NotFoundException;
-use Helvetica\Standard\Abstracts\HttpExceptionHandler;
+use Helvetica\Standard\Handlers\HttpExceptionHandler;
 
 class SayHelloFilter extends ActionFilter
 {
@@ -28,12 +28,13 @@ class SayHelloFilter extends ActionFilter
 $router = new Router();
 
 $router->set('/hello/<name>', function(Request $request, Response $response, $name) {
-    throw new NotFoundException();
+    // throw new NotFoundException();
+    return $response->withContent('Hello World');
 });
 
 class TestHandler extends HttpExceptionHandler
 {
-    public function getResponse(Request $request, Response $response)
+    public function hook(Request $request, Response $response)
     {
         return $response->withContent('not found');
     }
@@ -41,6 +42,6 @@ class TestHandler extends HttpExceptionHandler
 
 $app = new App();
 
-$app->setHandler(App::HANDLE_NOT_FOUND, TestHandler::class);
+// $app->setHandler(App::HANDLE_NOT_FOUND, TestHandler::class);
 
 $app->start();

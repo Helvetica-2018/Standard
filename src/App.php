@@ -7,15 +7,14 @@ use Helvetica\Standard\Dependent;
 use Helvetica\Standard\Library\Request;
 use Helvetica\Standard\Library\Response;
 use Helvetica\Standard\Abstracts\Provider;
-use Helvetica\Standard\Handlers\NotFoundHandler;
-use Helvetica\Standard\Abstracts\HttpExceptionHandler;
+use Helvetica\Standard\Handlers\HttpExceptionHandler;
 use Helvetica\Standard\Exception\HttpException;
 use Helvetica\Standard\Exception\NotFoundException;
+use Helvetica\Standard\Exception\MethodNotAllowedException;
 
 /**
  * @property Router $router
- * @property Container $container
- * @property Di $di
+ * @property Dependent $dependent
  * @property Config $config
  */
 class App
@@ -24,11 +23,8 @@ class App
 
     const HANDLE_METHOD_NOT_ALLOW = 'HANDLE_METHOD_NOT_ALLOW';
 
-    /** @var Container */
-    private $container;
-
-    /** @var Di $di */
-    public $di;
+    /** @var Dependent $dependent */
+    public $dependent;
 
     /** @var Config */
     public $config;
@@ -63,9 +59,9 @@ class App
      */
     public function __construct($config = [])
     {
-        $container = new Container();
-        $container->set(Config::class, new Config($config));
-        $this->di = new Di($container);
+        $this->dependent = new Dependent([
+            Config::class => new Config($config)
+        ]);
     }
 
     /**
@@ -75,7 +71,7 @@ class App
      */
     public function registerProvider($provider)
     {
-        (new $provider($this->di))->register();
+        (new $provider($this->dependent))->register();
     }
 
     /**
@@ -123,7 +119,7 @@ class App
             $this->controllerWrapper($controller, $params)
         );
         
-        $request = $this->di->newClass(Request::class);
+        $request = $this->dependent->get(Request::class);
         return \call_user_func($stack, $request);
     }
 
@@ -137,9 +133,9 @@ class App
     private function prepareFilters($filterClasses, $params)
     {
         $filters = \array_map(function($class) use ($params) {
-            $filter = $this->di->newClass($class);
+            $filter = $this->dependent->get($class);
             $filter->params = $params;
-            return $this->di->getClosure($filter, 'hook');
+            return $this->dependent->methodToClosure($filter, 'hook');
         }, $filterClasses);
         return \array_reverse($filters);
     }
@@ -156,7 +152,7 @@ class App
     {
         return function (Request $request) use ($controller, $params) {
             if (\method_exists($controller, '__invoke')) {
-                return $this->di->call($controller, $params);
+                return $this->dependent->subCall($controller, $params);
             } elseif (\is_array($controller)) {
                 $class = $controller[0];
                 $method = 'index';
@@ -164,8 +160,8 @@ class App
                     $method = $controller[1];
                 }
 
-                $controller = $this->di->newClass($class);
-                return $this->di->injectionByObject($controller, $method, $params);
+                $controller = $this->dependent->get($class);
+                return $this->dependent->methodCallWithInstance($controller, $method, $params);
             }
             throw new \RuntimeException('The param 2 must be array or callable object.');
         };
@@ -210,7 +206,7 @@ class App
      */
     public function setHandler($handleName, $handler)
     {
-        $this->di->setProvider($handleName, function() use ($handler) {
+        $this->dependent->setProvider($handleName, function() use ($handler) {
             return new $handler();
         });
     }
@@ -229,14 +225,31 @@ class App
         if ($e instanceof HttpException) {
 
             if ($e instanceof NotFoundException) {
-                $handler = $this->di->getProvider(static::HANDLE_NOT_FOUND);
-                $handler->exception = $e;
-                return $this->di->injectionByObject($handler, 'getResponse');
+                return $this->injectionHttpExceptionHandler(static::HANDLE_NOT_FOUND, $e);
             }
 
-            return $this->di->injectionByObject($e, 'getResponse');
+            if ($e instanceof MethodNotAllowedException) {
+                return $this->injectionHttpExceptionHandler(static::HANDLE_METHOD_NOT_ALLOW, $e);
+            }
+
+            return $this->dependent->methodCallWithInstance($e, 'getResponse');
         }
 
         throw $e;
+    }
+
+    /**
+     * Inject HttpExceptionHandler.
+     * 
+     * @param object $handleName
+     * @param Throwable $exception
+     * 
+     * @return Response
+     */
+    private function injectionHttpExceptionHandler($handleName, $exception)
+    {
+        $handler = $this->dependent->getProvider($handleName);
+        $instance = \call_user_func($handler, $exception);
+        return $this->dependent->methodCallWithInstance($instance, 'hook');
     }
 }

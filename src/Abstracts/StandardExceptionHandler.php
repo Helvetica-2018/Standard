@@ -6,8 +6,7 @@ use Helvetica\Standard\Library\Response;
 /**
  * @method Response getResponse()
  */
-abstract class HttpExceptionHandler
+abstract class StandardExceptionHandler
 {
-    /** @var \Exception */
-    public $exception;
+
 }

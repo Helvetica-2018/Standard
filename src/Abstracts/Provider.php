@@ -1,21 +1,21 @@
 <?php
 namespace Helvetica\Standard\Abstracts;
 
-use Helvetica\Standard\Di;
+use Helvetica\Standard\Dependent;
 
 /**
- * @property Di $di
+ * @property Dependent $dependent
  */
 abstract class Provider
 {
     /**
      * Init dependents provider.
      * 
-     * @param Container $dependent
+     * @param Dependent $dependent
      */
-    public function __construct(Di $di)
+    public function __construct(Dependent $dependent)
     {
-        $this->di = $di;
+        $this->dependent = $dependent;
     }
 
     /**
