@@ -72,4 +72,33 @@ class DependentTest extends TestCase
         $this->assertInstanceOf(DepParam2::class, $depParam2);
         $this->assertEquals($depParam2, $dm->d2);
     }
+
+    public function testSet()
+    {
+        $dependent = new Dependent();
+        $depParam1 = new DepParam1();
+        $dependent->set(DepParam1::class, $depParam1);
+
+        $d1 = $dependent->get(DepParam1::class);
+        $this->assertInstanceOf(DepParam1::class, $d1);
+        $this->assertEquals($depParam1, $d1);
+    }
+
+    public function testHas()
+    {
+        $dependent = new Dependent();
+        $depParam1 = new DepParam1();
+        $dependent->set(DepParam1::class, $depParam1);
+
+        $has = $dependent->has(DepParam1::class);
+        $this->assertTrue($has);
+
+        $has = $dependent->has(DepParam2::class);
+        $this->assertFalse($has);
+    }
+
+    public function testSetProvider()
+    {
+        
+    }
 }
