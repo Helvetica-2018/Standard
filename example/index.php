@@ -16,7 +16,7 @@ use Helvetica\Standard\Handlers\HttpExceptionHandler;
 
 class SayHelloFilter extends ActionFilter
 {
-    public function hook(Closure $next, $request)
+    public function hook(Request $request, $next)
     {
         $params = $this->getParams();
         $name = $params['name'];
@@ -29,8 +29,9 @@ $router = new Router();
 
 $router->set('/hello/<name>', function(Request $request, Response $response, $name) {
     // throw new NotFoundException();
-    return $response->withContent('Hello World');
-});
+    $text = $request->getAttribute('text');
+    return $response->withContent($text);
+})->setFilters([SayHelloFilter::class]);
 
 class TestHandler extends HttpExceptionHandler
 {

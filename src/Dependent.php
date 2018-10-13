@@ -8,6 +8,7 @@ use ReflectionMethod;
 use ReflectionFunction;
 use ReflectionParameter;
 use Psr\Container\ContainerInterface;
+use Helvetica\Standard\Exception\UnknownIdentifierException;
 
 /**
  * Dependents container.
@@ -91,7 +92,7 @@ class Dependent implements ContainerInterface
         if ($this->hasProvider($className)) {
             return $this->providers[$className];
         }
-        return null;
+        throw new UnknownIdentifierException();
     }
 
     /**
@@ -106,7 +107,7 @@ class Dependent implements ContainerInterface
         }
 
         if ($this->hasProvider($className)) {
-            $closure = $this->providers[$className];
+            $closure = $this->getProvider($className);
             $singleton = \call_user_func($closure, $this);
         } else {
             $singleton = $this->withFullInjectProvider($className);
@@ -151,12 +152,10 @@ class Dependent implements ContainerInterface
      * 
      * @throws \InvalidArgumentException
      */
-    public function methodCall($className, $method, $inherentParams=[])
+    public function methodCall($className, $method, $params=[])
     {
-        $reflection = new ReflectionClass($className);
-        $instances = $this->getParams($reflection, $method);
-        $params = array_merge($instances, $inherentParams);
-        return $reflection->newInstanceArgs($params);
+        $instance = $this->get($className);
+        return $this->methodCallWithInstance($instance, $method, $params);
     }
 
     /**
@@ -170,12 +169,12 @@ class Dependent implements ContainerInterface
      * 
      * @throws \InvalidArgumentException
      */
-    public function methodCallWithInstance($instance, $method, $inherentParams=[])
+    public function methodCallWithInstance($instance, $method, $params=[])
     {
         $reflection = new ReflectionClass($instance);
         $instances = $this->getParams($reflection, $method);
-        $params = array_merge($instances, $inherentParams);
-        return call_user_func_array([$instance, $method], $params);
+        $newParams = array_merge($instances, $params);
+        return call_user_func_array([$instance, $method], $newParams);
     }
 
     /**
@@ -185,11 +184,15 @@ class Dependent implements ContainerInterface
      * @param string $method
      * 
      * @return Closure
+     * @throws \BadMethodCallException
      */
     public function methodToClosure($instance, $method)
     {
         $reflectionMethod = new ReflectionMethod($instance, $method);
-        return $reflectionMethod->getClosure($instance);
+        if ($reflectionMethod->isPublic()) {
+            return $reflectionMethod->getClosure($instance);
+        }
+        throw new \BadMethodCallException('Call to non-public method '. __CLASS__ . '::' . $method);
     }
 
     /**
@@ -205,7 +208,10 @@ class Dependent implements ContainerInterface
         $reflectionFunction = new ReflectionFunction($func);
         $dependentInstances = $this->getDependentInstances($reflectionFunction);
         $newParams = array_merge($dependentInstances, $params);
-        $closure = $reflectionFunction->getClosure()->bindTo($bind);
+        $closure = $reflectionFunction->getClosure();
+        if (! \is_null($bind)) {
+            $closure = $closure->bindTo($bind);
+        }
         return call_user_func_array($closure, $newParams);
     }
 
@@ -266,14 +272,11 @@ class Dependent implements ContainerInterface
      * 
      * @return object
      * 
-     * @throw \BadMethodCallException
+     * @throws \BadMethodCallException
      */
     private function getSingletonByParameter(ReflectionParameter $reflectionParameter)
     {
         $reflectionClass = $reflectionParameter->getClass();
-        if (is_null($reflectionClass)) {
-            throw new \BadMethodCallException('The method parameters not exists.');
-        }
         $className = $reflectionClass->getName();
         return $this->get($className);
     }

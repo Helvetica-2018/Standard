@@ -29,9 +29,6 @@ class App
     /** @var Config */
     public $config;
 
-    /** @var Router $route */
-    private $route;
-
     /**
      * This method is part of the Symfony
      * {@link https://github.com/symfony/http-foundation/blob/master/Response.php#L1193} 
@@ -118,9 +115,8 @@ class App
             $this->carry(),
             $this->controllerWrapper($controller, $params)
         );
-        
-        $request = $this->dependent->get(Request::class);
-        return \call_user_func($stack, $request);
+
+        return \call_user_func($stack);
     }
 
     /**
@@ -150,7 +146,7 @@ class App
      */
     private function controllerWrapper($controller, $params)
     {
-        return function (Request $request) use ($controller, $params) {
+        return function () use ($controller, $params) {
             if (\method_exists($controller, '__invoke')) {
                 return $this->dependent->subCall($controller, $params);
             } elseif (\is_array($controller)) {
@@ -175,8 +171,8 @@ class App
     private function carry()
     {
         return function($next, $filter) {
-            return function ($request) use ($next, $filter) {
-                return $filter($next, $request);
+            return function () use ($next, $filter) {
+                return $this->dependent->subCall($filter, [$next]);
             };
         };
     }

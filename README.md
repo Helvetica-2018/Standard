@@ -101,7 +101,12 @@ use Helvetica\Standard\Abstracts\ActionFilter;
 
 class SayHelloFilter extends ActionFilter
 {
-    public function hook(Closure $next, $request)
+    /**
+     * The method hook is injectable, and has a fixed param $next.
+     * You can call and return the $next closure to continue
+     * or just return a response to terminate the process.
+     */
+    public function hook(Request $request, $next)
     {
         $params = $this->getParams();
         $name = $params['name'];

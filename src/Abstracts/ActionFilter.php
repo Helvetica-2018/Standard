@@ -13,14 +13,6 @@ abstract class ActionFilter
     public $params = [];
 
     /**
-     * The hook return a response or call next hook.
-     * 
-     * @param Closure $next
-     * @return Response
-     */
-    abstract public function hook(Closure $next, $request);
-
-    /**
      * Get params from path info.
      * 
      * @return array
