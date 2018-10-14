@@ -111,7 +111,7 @@ class SayHelloFilter extends ActionFilter
         $params = $this->getParams();
         $name = $params['name'];
         $request->withAttributes(['text' => 'hello ' . $name]);
-        return $next($request);
+        return $next();
     }
 }
 
